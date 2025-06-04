@@ -7,14 +7,12 @@ from recursos.funcoes import inicializarBancoDeDados
 from recursos.funcoes import escreverDados
 import json
 
-print("mudou")
-print("mudou 2")
 pygame.init()
 inicializarBancoDeDados()
-tamanho = (800,600)
+tamanho = (1000,700)
 relogio = pygame.time.Clock()
 tela = pygame.display.set_mode( tamanho ) 
-pygame.display.set_caption("Iron Man do Marcão")
+pygame.display.set_caption("Surrealismo")
 icone  = pygame.image.load("assets/icone.png")
 pygame.display.set_icon(icone)
 branco = (255,255,255)
