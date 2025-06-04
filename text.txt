@@ -1,0 +1,25 @@
+# Collision
+
+persona_rect = pygame.Rect(posicaoXPersona, posicaoYPersona, larguraPersona, alturaPersona)
+missile_rect = pygame.Rect(posicaoXMissel, posicaoYMissel, larguaMissel, alturaMissel)
+
+if persona_rect.colliderect(missile_rect):
+    escreverDados(nome, pontos)
+    dead()
+
+# Screen limiter
+
+if olho_sprite.rect.x > tamanho[0] - olho_sprite.rect.width:
+    olho_sprite.rect.x = tamanho[0] - olho_sprite.rect.width
+
+# Colisao antiga
+
+ if  len( list( set(pixelsMisselY).intersection(set(pixelsPersonaY))) ) > dificuldade:
+            if len( list( set(pixelsMisselX).intersection(set(pixelsPersonaX))   ) )  > dificuldade:
+                escreverDados(nome, pontos)
+                dead()
+                
+            else:
+                print("Ainda Vivo, mas por pouco!")
+        else:
+            print("Ainda Vivo")

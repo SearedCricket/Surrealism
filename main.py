@@ -7,7 +7,7 @@ from recursos.funcoes import inicializarBancoDeDados
 from recursos.funcoes import escreverDados
 import json
 from recursos.sprites import carregar_imagens, SpriteOlho
-
+from recursos.inimigo import Inimigo
 
 
 pygame.init()
@@ -20,16 +20,12 @@ icone  = pygame.image.load("Recursos/Icone/Icone.png")
 pygame.display.set_icon(icone)
 branco = (255,255,255)
 preto = (0, 0 ,0 )
-#iron = pygame.image.load("assets/iron.png")
 fundoStart = pygame.image.load("Recursos/Backg/Start.png")
 fundoJogo = pygame.image.load("Recursos/Backg/Jogo.jpeg")
 fundoDead = pygame.image.load("Recursos/Backg/Death.png")
-#missel = pygame.image.load("assets/missile.png")
-#missileSound = pygame.mixer.Sound("assets/missile.wav")
-#explosaoSound = pygame.mixer.Sound("assets/explosao.wav")
 fonteMenu = pygame.font.SysFont("comicsans",18)
 fonteMorte = pygame.font.SysFont("arial",120)
-pygame.mixer.music.load("assets/ironsound.mp3")
+
 
 def jogar():
     largura_janela = 300
@@ -43,6 +39,18 @@ def jogar():
             #print(f'Nome digitado: {nome}')  # Exibe o nome no console
             root.destroy()  # Fecha a janela após a entrada válida
 
+    # Intro Musica
+    pygame.mixer.music.load("Recursos/SoundTracks/Jogo/Start.mp3")
+    pygame.mixer.music.play()
+
+    # Espera entre o loop
+    while pygame.mixer.music.get_busy():
+        pygame.time.wait(100)
+
+    # Loop da musica
+    pygame.mixer.music.load("Recursos/SoundTracks/Jogo/Loop2.mp3")
+    pygame.mixer.music.play(-1)
+
     # Carregar frames do olho
     caminho_olho = "Recursos/Eye"
     largura_desejada_olho = 150
@@ -50,7 +58,21 @@ def jogar():
 
     # Criar sprites do olho
     olho_sprite = SpriteOlho((400, 300), quadros_olho)
-    grupo_sprites = pygame.sprite.Group(olho_sprite)
+    olho_grupo_sprites = pygame.sprite.Group(olho_sprite)
+
+    # Carregar imagem inimigo
+    inimigo_images = [
+        pygame.image.load("Recursos/Knife/faca1.png"),
+        pygame.image.load("Recursos/Knife/faca2.png"),
+        pygame.image.load("Recursos/Knife/faca3.png"),
+        pygame.image.load("Recursos/Knife/faca4.png")
+    ]
+
+    # Grupo inimigo
+    inimigo_group = pygame.sprite.Group()
+    for _ in range(5):
+        inimigo = Inimigo(inimigo_images, tamanho[0])
+        inimigo_group.add(inimigo)
 
     # Criação da janela principal
     root = tk.Tk()
@@ -81,14 +103,8 @@ def jogar():
     movimentoYPersona  = 0
     posicaoXMissel = 400
     posicaoYMissel = -240
-    velocidadeMissel = 1
-    pygame.mixer.Sound.play(missileSound)
-    pygame.mixer.music.play(-1)
+
     pontos = 0
-    larguraPersona = 250
-    alturaPersona = 127
-    larguaMissel  = 50
-    alturaMissel  = 250
     dificuldade  = 30
     while True:
         for evento in pygame.event.get():
@@ -111,7 +127,8 @@ def jogar():
             elif evento.type == pygame.KEYUP and evento.key == pygame.K_DOWN:
                 movimentoYPersona = 0
                 
-        grupo_sprites.update()  # Atualiza o sprite do olho
+        olho_grupo_sprites.update()  # Atualiza o sprite do olho
+        inimigo_group.update()
 
         if olho_sprite.rect.x < 0:
             olho_sprite.rect.x = 0
@@ -123,56 +140,24 @@ def jogar():
         elif olho_sprite.rect.y > 650:
             olho_sprite.rect.y = 650
 
-        posicaoXPersona = posicaoXPersona + movimentoXPersona            
-        posicaoYPersona = posicaoYPersona + movimentoYPersona            
-        
-        if posicaoXPersona < 0 :
-            posicaoXPersona = 15
-        elif posicaoXPersona >550:
-            posicaoXPersona = 540
-            
-        if posicaoYPersona < 0 :
-            posicaoYPersona = 15
-        elif posicaoYPersona > 473:
-            posicaoYPersona = 463
+             
+        if pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
+            pygame.mixer.music.stop()
+            escreverDados(nome, pontos)
+            dead()
         
             
         tela.fill(branco)
         tela.blit(fundoJogo, (0,0) )
-        grupo_sprites.draw(tela)
+        olho_grupo_sprites.draw(tela)
+        inimigo_group.draw(tela)
         #pygame.draw.circle(tela, preto, (posicaoXPersona,posicaoYPersona), 40, 0 )
-        #tela.blit( iron, (posicaoXPersona, posicaoYPersona) )
         
-        posicaoYMissel = posicaoYMissel + velocidadeMissel
-        if posicaoYMissel > 600:
-            posicaoYMissel = -240
-            pontos = pontos + 1
-            velocidadeMissel = velocidadeMissel + 1
-            posicaoXMissel = random.randint(0,800)
-            pygame.mixer.Sound.play(missileSound)
-            
-            
-        tela.blit( missel, (posicaoXMissel, posicaoYMissel) )
         
         texto = fonteMenu.render("Pontos: "+str(pontos), True, branco)
         tela.blit(texto, (15,15))
         
-        pixelsPersonaX = list(range(posicaoXPersona, posicaoXPersona+larguraPersona))
-        pixelsPersonaY = list(range(posicaoYPersona, posicaoYPersona+alturaPersona))
-        pixelsMisselX = list(range(posicaoXMissel, posicaoXMissel + larguaMissel))
-        pixelsMisselY = list(range(posicaoYMissel, posicaoYMissel + alturaMissel))
         
-        os.system("cls")
-        # print( len( list( set(pixelsMisselX).intersection(set(pixelsPersonaX))   ) )   )
-        if  len( list( set(pixelsMisselY).intersection(set(pixelsPersonaY))) ) > dificuldade:
-            if len( list( set(pixelsMisselX).intersection(set(pixelsPersonaX))   ) )  > dificuldade:
-                escreverDados(nome, pontos)
-                dead()
-                
-            else:
-                print("Ainda Vivo, mas por pouco!")
-        else:
-            print("Ainda Vivo")
         
         pygame.display.update()
         relogio.tick(60)
@@ -184,6 +169,8 @@ def start():
     larguraButtonQuit = 150
     alturaButtonQuit  = 40
     
+    pygame.mixer.music.load("Recursos/SoundTracks/Start/A World Of Madness.mp3")
+    pygame.mixer.music.play(-1)
 
     while True:
         for evento in pygame.event.get():
@@ -230,7 +217,6 @@ def start():
 
 def dead():
     pygame.mixer.music.stop()
-    pygame.mixer.Sound.play(explosaoSound)
     larguraButtonStart = 150
     alturaButtonStart  = 40
     larguraButtonQuit = 150
