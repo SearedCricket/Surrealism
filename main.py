@@ -6,6 +6,9 @@ from tkinter import messagebox
 from recursos.funcoes import inicializarBancoDeDados
 from recursos.funcoes import escreverDados
 import json
+from recursos.sprites import carregar_imagens, SpriteOlho
+
+
 
 pygame.init()
 inicializarBancoDeDados()
@@ -13,17 +16,17 @@ tamanho = (1000,700)
 relogio = pygame.time.Clock()
 tela = pygame.display.set_mode( tamanho ) 
 pygame.display.set_caption("Surrealismo")
-icone  = pygame.image.load("assets/icone.png")
+icone  = pygame.image.load("Recursos/Icone/Icone.png")
 pygame.display.set_icon(icone)
 branco = (255,255,255)
 preto = (0, 0 ,0 )
-iron = pygame.image.load("assets/iron.png")
-fundoStart = pygame.image.load("assets/fundoStart.jpg")
-fundoJogo = pygame.image.load("Recursos/Backg/background.jpeg")
-fundoDead = pygame.image.load("assets/fundoDead.png")
-missel = pygame.image.load("assets/missile.png")
-missileSound = pygame.mixer.Sound("assets/missile.wav")
-explosaoSound = pygame.mixer.Sound("assets/explosao.wav")
+#iron = pygame.image.load("assets/iron.png")
+fundoStart = pygame.image.load("Recursos/Backg/Start.png")
+fundoJogo = pygame.image.load("Recursos/Backg/Jogo.jpeg")
+fundoDead = pygame.image.load("Recursos/Backg/Death.png")
+#missel = pygame.image.load("assets/missile.png")
+#missileSound = pygame.mixer.Sound("assets/missile.wav")
+#explosaoSound = pygame.mixer.Sound("assets/explosao.wav")
 fonteMenu = pygame.font.SysFont("comicsans",18)
 fonteMorte = pygame.font.SysFont("arial",120)
 pygame.mixer.music.load("assets/ironsound.mp3")
@@ -39,6 +42,15 @@ def jogar():
         else:
             #print(f'Nome digitado: {nome}')  # Exibe o nome no console
             root.destroy()  # Fecha a janela após a entrada válida
+
+    # Carregar frames do olho
+    caminho_olho = "Recursos/Eye"
+    largura_desejada_olho = 150
+    quadros_olho = carregar_imagens(caminho_olho, largura_desejada_olho)
+
+    # Criar sprites do olho
+    olho_sprite = SpriteOlho((400, 300), quadros_olho)
+    grupo_sprites = pygame.sprite.Group(olho_sprite)
 
     # Criação da janela principal
     root = tk.Tk()
@@ -99,6 +111,18 @@ def jogar():
             elif evento.type == pygame.KEYUP and evento.key == pygame.K_DOWN:
                 movimentoYPersona = 0
                 
+        grupo_sprites.update()  # Atualiza o sprite do olho
+
+        if olho_sprite.rect.x < 0:
+            olho_sprite.rect.x = 0
+        elif olho_sprite.rect.x > 950:
+            olho_sprite.rect.x = 950
+
+        if olho_sprite.rect.y < 0:
+            olho_sprite.rect.y = 0
+        elif olho_sprite.rect.y > 650:
+            olho_sprite.rect.y = 650
+
         posicaoXPersona = posicaoXPersona + movimentoXPersona            
         posicaoYPersona = posicaoYPersona + movimentoYPersona            
         
@@ -115,8 +139,9 @@ def jogar():
             
         tela.fill(branco)
         tela.blit(fundoJogo, (0,0) )
+        grupo_sprites.draw(tela)
         #pygame.draw.circle(tela, preto, (posicaoXPersona,posicaoYPersona), 40, 0 )
-        tela.blit( iron, (posicaoXPersona, posicaoYPersona) )
+        #tela.blit( iron, (posicaoXPersona, posicaoYPersona) )
         
         posicaoYMissel = posicaoYMissel + velocidadeMissel
         if posicaoYMissel > 600:
