@@ -3,11 +3,11 @@ import random
 import os
 import tkinter as tk
 from tkinter import messagebox
-from recursos.funcoes import inicializarBancoDeDados
-from recursos.funcoes import escreverDados
+from complementos.funcoes import inicializarBancoDeDados
+from complementos.funcoes import escreverDados
 import json
-from recursos.sprites import carregar_imagens, SpriteOlho
-from recursos.inimigo import Inimigo
+from complementos.sprites import carregar_imagens, SpriteOlho
+from complementos.inimigo import Inimigo
 
 
 pygame.init()
