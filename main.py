@@ -7,7 +7,7 @@ from complementos.funcoes import inicializarBancoDeDados
 from complementos.funcoes import escreverDados
 import json
 from complementos.sprites import carregar_imagens, SpriteOlho
-from complementos.inimigo import Inimigo
+from complementos.inimigo import Inimigo, spawn_inimigo
 
 
 pygame.init()
@@ -27,6 +27,7 @@ fonteMenu = pygame.font.SysFont("comicsans",18)
 fonteMorte = pygame.font.SysFont("arial",120)
 
 
+
 def jogar():
     largura_janela = 300
     altura_janela = 50
@@ -39,21 +40,9 @@ def jogar():
             #print(f'Nome digitado: {nome}')  # Exibe o nome no console
             root.destroy()  # Fecha a janela após a entrada válida
 
-    # Intro Musica
-    pygame.mixer.music.load("Recursos/SoundTracks/Jogo/Start.mp3")
-    pygame.mixer.music.play()
-
-    # Espera entre o loop
-    while pygame.mixer.music.get_busy():
-        pygame.time.wait(100)
-
-    # Loop da musica
-    pygame.mixer.music.load("Recursos/SoundTracks/Jogo/Loop2.mp3")
-    pygame.mixer.music.play(-1)
-
     # Carregar frames do olho
     caminho_olho = "Recursos/Eye"
-    largura_desejada_olho = 150
+    largura_desejada_olho = 250
     quadros_olho = carregar_imagens(caminho_olho, largura_desejada_olho)
 
     # Criar sprites do olho
@@ -61,18 +50,28 @@ def jogar():
     olho_grupo_sprites = pygame.sprite.Group(olho_sprite)
 
     # Carregar imagem inimigo
-    inimigo_images = [
-        pygame.image.load("Recursos/Knife/faca1.png"),
-        pygame.image.load("Recursos/Knife/faca2.png"),
-        pygame.image.load("Recursos/Knife/faca3.png"),
-        pygame.image.load("Recursos/Knife/faca4.png")
+    enemy_scales = [0.4, 0.50, 0.70, 0.35]
+
+    enemy_paths = [
+        "Recursos/Knife/faca1.png",
+        "Recursos/Knife/faca2.png",
+        "Recursos/Knife/faca3.png",
+        "Recursos/Knife/faca4.png"
     ]
+
+    inimigo_images = []
+    for path, scale in zip(enemy_paths, enemy_scales):
+        img = pygame.image.load(path)
+        original_size = img.get_size()
+        new_size = (int(original_size[0] * scale), int(original_size[1] * scale))
+        img_scaled = pygame.transform.scale(img, new_size)
+        inimigo_images.append(img_scaled)
 
     # Grupo inimigo
     inimigo_group = pygame.sprite.Group()
-    for _ in range(5):
-        inimigo = Inimigo(inimigo_images, tamanho[0])
-        inimigo_group.add(inimigo)
+    inimigo_index = 0
+
+    inimigo_index = spawn_inimigo(inimigo_images, tamanho, inimigo_index, inimigo_group, Inimigo)
 
     # Criação da janela principal
     root = tk.Tk()
@@ -93,8 +92,19 @@ def jogar():
     botao = tk.Button(root, text="Enviar", command=obter_nome)
     botao.pack()
 
+    print("Before")
     # Inicia o loop da interface gráfica
     root.mainloop()
+    
+    # Intro Musica
+    pygame.mixer.music.load("Recursos/SoundTracks/Jogo/Start.mp3")
+    pygame.mixer.music.play()
+
+    MUSIC_END = pygame.USEREVENT + 1
+    pygame.mixer.music.set_endevent(MUSIC_END)
+
+    print("After")
+
     
 
     posicaoXPersona = 400
@@ -110,6 +120,10 @@ def jogar():
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 quit()
+            elif evento.type == MUSIC_END and not loop2_started:
+                pygame.mixer.music.load("Recursos/SoundTracks/Jogo/Loop2.mp3")
+                pygame.mixer.music.play(-1)
+                loop2_started = True
             elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_RIGHT:
                 movimentoXPersona = 15
             elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_LEFT:
@@ -127,6 +141,9 @@ def jogar():
             elif evento.type == pygame.KEYUP and evento.key == pygame.K_DOWN:
                 movimentoYPersona = 0
                 
+        if len(inimigo_group) == 0 and inimigo_index < len(inimigo_images):
+            inimigo_index = spawn_inimigo(inimigo_images, tamanho, inimigo_index, inimigo_group, Inimigo)
+
         olho_grupo_sprites.update()  # Atualiza o sprite do olho
         inimigo_group.update()
 
@@ -152,7 +169,10 @@ def jogar():
         olho_grupo_sprites.draw(tela)
         inimigo_group.draw(tela)
         #pygame.draw.circle(tela, preto, (posicaoXPersona,posicaoYPersona), 40, 0 )
-        
+        pygame.draw.rect(tela, (255, 0, 0), olho_sprite.rect, 2)
+
+        for inimigo in inimigo_group:
+            pygame.draw.rect(tela, (0, 0, 255), inimigo.rect, 2)
         
         texto = fonteMenu.render("Pontos: "+str(pontos), True, branco)
         tela.blit(texto, (15,15))
@@ -164,13 +184,14 @@ def jogar():
 
 
 def start():
+
+    pygame.mixer.music.load("Recursos/SoundTracks/Start/A World Of Madness.mp3")
+    pygame.mixer.music.play(-1)
+
     larguraButtonStart = 150
     alturaButtonStart  = 40
     larguraButtonQuit = 150
     alturaButtonQuit  = 40
-    
-    pygame.mixer.music.load("Recursos/SoundTracks/Start/A World Of Madness.mp3")
-    pygame.mixer.music.play(-1)
 
     while True:
         for evento in pygame.event.get():

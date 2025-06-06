@@ -20,3 +20,10 @@ class Inimigo(pygame.sprite.Sprite):
             self.rect.x = random.randint(0, 1000 - self.rect.width)
             self.rect.y = -self.rect.height
             self.speed = random.randint(3, 7)
+
+def spawn_inimigo(inimigo_images, tamanho, inimigo_index, inimigo_group, inimigoClass):
+    if inimigo_index < len(inimigo_images):
+        inimigo = inimigoClass([inimigo_images[inimigo_index]], tamanho[0])
+        inimigo_group.add(inimigo)
+        return inimigo_index + 1
+    return inimigo_index
