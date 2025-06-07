@@ -16,7 +16,7 @@ tamanho = (1000,700)
 relogio = pygame.time.Clock()
 tela = pygame.display.set_mode( tamanho ) 
 pygame.display.set_caption("Surrealismo")
-icone  = pygame.image.load("Recursos/Icone/Icone.png")
+icone  = pygame.image.load("Recursos\Knife\Icone\Icone.png") #trocar o diretorio do icone
 pygame.display.set_icon(icone)
 branco = (255,255,255)
 preto = (0, 0 ,0 )
@@ -42,7 +42,7 @@ def jogar():
 
     # Carregar frames do olho
     caminho_olho = "Recursos/Eye"
-    largura_desejada_olho = 250
+    largura_desejada_olho = 90
     quadros_olho = carregar_imagens(caminho_olho, largura_desejada_olho)
 
     # Criar sprites do olho
@@ -111,8 +111,6 @@ def jogar():
     posicaoYPersona = 300
     movimentoXPersona  = 0
     movimentoYPersona  = 0
-    posicaoXMissel = 400
-    posicaoYMissel = -240
 
     pontos = 0
     dificuldade  = 30
