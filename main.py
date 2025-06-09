@@ -7,10 +7,8 @@ from tkinter import messagebox
 from complementos.funcoes import inicializarBancoDeDados
 from complementos.funcoes import escreverDados
 import json
-from complementos.sprites import carregar_imagens, SpriteOlho
+from complementos.sprites import carregar_imagens, SpriteOlho, SpriteOlho2, load_gif_frames
 from complementos.inimigo import Inimigo, spawn_inimigo_aleatorio
-
-
 pygame.init()
 inicializarBancoDeDados()
 tamanho = (1000,700)
@@ -22,7 +20,7 @@ pygame.display.set_icon(icone)
 branco = (255,255,255)
 preto = (0, 0 ,0 )
 fundoStart = pygame.image.load("Recursos/Backg/Weird.png")
-fundoJogo = pygame.image.load("Recursos/Backg/Jogo.jpeg")
+fundoJogo = pygame.image.load("Recursos/Backg/space.jpg")
 fundoDead = pygame.image.load("Recursos/Backg/Death.png")
 fonteMenu = pygame.font.Font("Recursos\Fonts\CalangoRevi.otf",18)
 fonteMorte = pygame.font.SysFont("arial",120)
@@ -112,11 +110,8 @@ def jogar():
     root.mainloop()
     
     # Intro Musica
-    pygame.mixer.music.load("Recursos/SoundTracks/Jogo/Start.mp3")
-    pygame.mixer.music.play()
-
-    MUSIC_END = pygame.USEREVENT + 1
-    pygame.mixer.music.set_endevent(MUSIC_END)
+    pygame.mixer.music.load("Recursos\SoundTracks\Death.mp3")
+    pygame.mixer.music.play(-1)
 
     print("After")
 
@@ -133,10 +128,6 @@ def jogar():
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 quit()
-            elif evento.type == MUSIC_END and not loop2_started:
-                pygame.mixer.music.load("Recursos/SoundTracks/Jogo/Loop2.mp3")
-                pygame.mixer.music.play(-1)
-                loop2_started = True
             elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_RIGHT:
                 movimentoXPersona = 15
             elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_LEFT:
@@ -236,8 +227,12 @@ def jogar():
 
 def start():
 
-    pygame.mixer.music.load("Recursos/SoundTracks/Start/A World Of Madness.mp3")
+    pygame.mixer.music.load("Recursos\SoundTracks\Sorrow.mp3")
     pygame.mixer.music.play(-1)
+
+    gif_frames = load_gif_frames("Recursos/Eye/Olho2/Olho2.gif", largura_desejada=50)
+    olho2_sprite = SpriteOlho2((tamanho[0] // 2, 389), gif_frames)
+    olho2_group = pygame.sprite.Group(olho2_sprite)
 
     rect_width = 62
     rect_height = 70
@@ -254,15 +249,16 @@ def start():
                 if square_rect.collidepoint(mouse_pos):
                     jogar()
                 
-        startPhrase = fonteMenu.render("Você não se pergunta o que tem ali?", True, preto)
+        #startPhrase = fonteMenu.render("Você não quer saber o que tem ali?", True, preto)
 
             
             
         tela.fill(branco)
         tela.blit(fundoStart, (0,0) )
-        tela.blit(startPhrase, (tamanho[0] // 2 - startPhrase.get_width() // 2, 300 ))
+        #tela.blit(startPhrase, (tamanho[0] // 2 - startPhrase.get_width() // 2, 300 ))
         #square_button = pygame.draw.rect(tela, (255, 0, 0), (rect_x, rect_y, rect_width, rect_height), width=2)
-
+        olho2_group.update()
+        olho2_group.draw(tela)
         
         pygame.display.update()
         relogio.tick(60)
