@@ -1,6 +1,7 @@
 import pygame
 import random
 import os
+import math
 import tkinter as tk
 from tkinter import messagebox
 from complementos.funcoes import inicializarBancoDeDados
@@ -20,17 +21,31 @@ icone  = pygame.image.load("Recursos\Icone\Icone.png") #trocar o diretorio do ic
 pygame.display.set_icon(icone)
 branco = (255,255,255)
 preto = (0, 0 ,0 )
-fundoStart = pygame.image.load("Recursos/Backg/Start.png")
+fundoStart = pygame.image.load("Recursos/Backg/Weird.png")
 fundoJogo = pygame.image.load("Recursos/Backg/Jogo.jpeg")
 fundoDead = pygame.image.load("Recursos/Backg/Death.png")
-fonteMenu = pygame.font.SysFont("comicsans",18)
+fonteMenu = pygame.font.Font("Recursos\Fonts\CalangoRevi.otf",18)
 fonteMorte = pygame.font.SysFont("arial",120)
-
-
+coracao = pygame.image.load("Recursos/heart/Heart.png")
+pontos = 0
+vidas = 3
 
 def jogar():
+    
     largura_janela = 300
     altura_janela = 50
+    global pontos, vidas
+    pontos = 0
+    vidas = 3
+    invulneravel = False
+    invuln_timer = 0
+    invuln_duration = 1500
+    loop2_started = False
+    heart_pulse_timer = 0
+    heart_base_size = 45
+    heart_pulse_speed = 0.08
+    heart_rotation = 0
+
     def obter_nome():
         global nome
         nome = entry_nome.get()  # Obtém o texto digitado
@@ -112,7 +127,7 @@ def jogar():
     movimentoXPersona  = 0
     movimentoYPersona  = 0
 
-    pontos = 0
+    
     dificuldade  = 30
     while True:
         for evento in pygame.event.get():
@@ -131,11 +146,20 @@ def jogar():
             elif evento.type == pygame.KEYUP and evento.key == pygame.K_LEFT:
                 movimentoXPersona = 0
                 
+        
+
         if len(inimigo_group) == 0:
             spawn_inimigo_aleatorio(inimigo_images, tamanho[0], inimigo_group, Inimigo)
 
         olho_grupo_sprites.update()  # Atualiza o sprite do olho
         inimigo_group.update()
+
+        for inimigo in list(inimigo_group):
+            if inimigo.rect.top >= 700 and not inimigo.collided:
+                pontos += 1
+                inimigo_group.remove(inimigo)
+            elif inimigo.rect.top >= 700:
+                inimigo_group.remove(inimigo)
 
         olho_sprite.rect.x += movimentoXPersona
 
@@ -149,11 +173,20 @@ def jogar():
         elif olho_sprite.rect.y > 650:
             olho_sprite.rect.y = 650
 
-             
-        if pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
-            pygame.mixer.music.stop()
-            escreverDados(nome, pontos)
-            dead()
+        if invulneravel:
+            if pygame.time.get_ticks() - invuln_timer > invuln_duration:
+                invulneravel = False
+
+        if not invulneravel and pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
+            vidas -= 1
+            invulneravel = True
+            invuln_timer = pygame.time.get_ticks()
+            for inimigo in pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
+                inimigo.collided = True
+            if vidas <=0:
+                pygame.mixer.music.stop()
+                escreverDados(nome, pontos)
+                dead()
         
             
         tela.fill(branco)
@@ -166,11 +199,37 @@ def jogar():
         for inimigo in inimigo_group:
             pygame.draw.rect(tela, (0, 0, 255), inimigo.rect, 2)
         
-        texto = fonteMenu.render("Pontos: "+str(pontos), True, branco)
-        tela.blit(texto, (15,15))
+        texto_pontos = fonteMenu.render(f"Pontos: {pontos} ", True, branco)
+        pontos_rect = texto_pontos.get_rect()
+        pontos_rect.topright = (tamanho[0] - 15, 15)
+        tela.blit(texto_pontos, pontos_rect)
         
+        heart_pulse_timer += heart_pulse_speed
+        pulse_scale = abs(math.sin(heart_pulse_timer)) *0.2 + 0.9
+        heart_rotation = math.sin(heart_pulse_timer) * 15
+
+        coracao_spacing = 60
+        coracao_width = int(heart_base_size * pulse_scale)
         
-        
+        original_ratio = coracao.get_width() / coracao.get_height()
+        coracao_height = int(coracao_width / original_ratio)
+
+        coracao_base = pygame.transform.scale(coracao, (coracao_width, coracao_height))
+        coracao_scaled = pygame.transform.rotate(coracao_base, heart_rotation)
+
+        base_x = 20
+        base_y = 30
+
+        for i in range(vidas):
+            coracao_pos = (20 + (i * coracao_spacing), 15)
+            width_diff = coracao_scaled.get_width() - heart_base_size
+            height_diff = coracao_scaled.get_height() - int(heart_base_size * original_ratio)
+            center_offset_x = width_diff // 2
+            center_offset_y = height_diff // 2
+            heart_x = base_x + (i * coracao_spacing) - center_offset_x
+            heart_y = base_y - center_offset_y
+            tela.blit(coracao_scaled, (heart_x, heart_y))
+
         pygame.display.update()
         relogio.tick(60)
 
@@ -180,49 +239,30 @@ def start():
     pygame.mixer.music.load("Recursos/SoundTracks/Start/A World Of Madness.mp3")
     pygame.mixer.music.play(-1)
 
-    larguraButtonStart = 150
-    alturaButtonStart  = 40
-    larguraButtonQuit = 150
-    alturaButtonQuit  = 40
+    rect_width = 62
+    rect_height = 70
+    rect_x = (tamanho[0] - rect_width) // 2
+    rect_y = 356
 
     while True:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 quit()
-            elif evento.type == pygame.MOUSEBUTTONDOWN:
-                if startButton.collidepoint(evento.pos):
-                    larguraButtonStart = 140
-                    alturaButtonStart  = 35
-                if quitButton.collidepoint(evento.pos):
-                    larguraButtonQuit = 140
-                    alturaButtonQuit  = 35
-
-                
             elif evento.type == pygame.MOUSEBUTTONUP:
-                # Verifica se o clique foi dentro do retângulo
-                if startButton.collidepoint(evento.pos):
-                    #pygame.mixer.music.play(-1)
-                    larguraButtonStart = 150
-                    alturaButtonStart  = 40
+                mouse_pos = pygame.mouse.get_pos()
+                square_rect = pygame.Rect(rect_x, rect_y, rect_width, rect_height)
+                if square_rect.collidepoint(mouse_pos):
                     jogar()
-                if quitButton.collidepoint(evento.pos):
-                    #pygame.mixer.music.play(-1)
-                    larguraButtonQuit = 150
-                    alturaButtonQuit  = 40
-                    quit()
-                    
+                
+        startPhrase = fonteMenu.render("Você não se pergunta o que tem ali?", True, preto)
+
             
             
         tela.fill(branco)
         tela.blit(fundoStart, (0,0) )
+        tela.blit(startPhrase, (tamanho[0] // 2 - startPhrase.get_width() // 2, 300 ))
+        #square_button = pygame.draw.rect(tela, (255, 0, 0), (rect_x, rect_y, rect_width, rect_height), width=2)
 
-        startButton = pygame.draw.rect(tela, branco, (10,10, larguraButtonStart, alturaButtonStart), border_radius=15)
-        startTexto = fonteMenu.render("Iniciar Game", True, preto)
-        tela.blit(startTexto, (25,12))
-        
-        quitButton = pygame.draw.rect(tela, branco, (10,60, larguraButtonQuit, alturaButtonQuit), border_radius=15)
-        quitTexto = fonteMenu.render("Sair do Game", True, preto)
-        tela.blit(quitTexto, (25,62))
         
         pygame.display.update()
         relogio.tick(60)
@@ -248,7 +288,7 @@ def dead():
     listbox.pack(pady=20)
 
     # Adiciona o log das partidas no Listbox
-    log_partidas = open("base.atitus", "r").read()
+    log_partidas = open("log.dat", "r").read()
     log_partidas = json.loads(log_partidas)
     for chave in log_partidas:
         listbox.insert(tk.END, f"Pontos: {log_partidas[chave][0]} na data: {log_partidas[chave][1]} - Nickname: {chave}")  # Adiciona cada linha no Listbox
