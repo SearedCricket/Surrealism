@@ -20,13 +20,13 @@ class SpriteOlho(pygame.sprite.Sprite):
         self.image = self.imagens[self.indice_atual]
         self.rect = self.image.get_rect()
         self.rect.topleft = posicao
-        self.tempo_animacao = 100
+        self.tempo_animacao = 200
         self.ultimo_tempo = pygame.time.get_ticks()
 
-def update(self):
-    agora = pygame.time.get_ticks()
-    if agora - self.ultimo_tempo > self.tempo_animacao:
-        self. indice_atual = (self.indice_atual + 1) % len(self.imagens)
-        self.image = self.imagens[self.indice_atual]
-        self.ultimo_tempo = agora
+    def update(self):
+        agora = pygame.time.get_ticks()
+        if agora - self.ultimo_tempo > self.tempo_animacao:
+            self. indice_atual = (self.indice_atual + 1) % len(self.imagens)
+            self.image = self.imagens[self.indice_atual]
+            self.ultimo_tempo = agora
   

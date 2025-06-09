@@ -7,7 +7,7 @@ from complementos.funcoes import inicializarBancoDeDados
 from complementos.funcoes import escreverDados
 import json
 from complementos.sprites import carregar_imagens, SpriteOlho
-from complementos.inimigo import Inimigo, spawn_inimigo
+from complementos.inimigo import Inimigo, spawn_inimigo_aleatorio
 
 
 pygame.init()
@@ -16,7 +16,7 @@ tamanho = (1000,700)
 relogio = pygame.time.Clock()
 tela = pygame.display.set_mode( tamanho ) 
 pygame.display.set_caption("Surrealismo")
-icone  = pygame.image.load("Recursos\Knife\Icone\Icone.png") #trocar o diretorio do icone
+icone  = pygame.image.load("Recursos\Icone\Icone.png") #trocar o diretorio do icone
 pygame.display.set_icon(icone)
 branco = (255,255,255)
 preto = (0, 0 ,0 )
@@ -46,7 +46,7 @@ def jogar():
     quadros_olho = carregar_imagens(caminho_olho, largura_desejada_olho)
 
     # Criar sprites do olho
-    olho_sprite = SpriteOlho((400, 300), quadros_olho)
+    olho_sprite = SpriteOlho((450, 500), quadros_olho)
     olho_grupo_sprites = pygame.sprite.Group(olho_sprite)
 
     # Carregar imagem inimigo
@@ -71,7 +71,7 @@ def jogar():
     inimigo_group = pygame.sprite.Group()
     inimigo_index = 0
 
-    inimigo_index = spawn_inimigo(inimigo_images, tamanho, inimigo_index, inimigo_group, Inimigo)
+    inimigo_index = spawn_inimigo_aleatorio(inimigo_images, tamanho[0], inimigo_group, Inimigo)
 
     # Criação da janela principal
     root = tk.Tk()
@@ -130,20 +130,14 @@ def jogar():
                 movimentoXPersona = 0
             elif evento.type == pygame.KEYUP and evento.key == pygame.K_LEFT:
                 movimentoXPersona = 0
-            elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_UP:
-                movimentoYPersona = -15
-            elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_DOWN:
-                movimentoYPersona = 15
-            elif evento.type == pygame.KEYUP and evento.key == pygame.K_UP:
-                movimentoYPersona = 0
-            elif evento.type == pygame.KEYUP and evento.key == pygame.K_DOWN:
-                movimentoYPersona = 0
                 
-        if len(inimigo_group) == 0 and inimigo_index < len(inimigo_images):
-            inimigo_index = spawn_inimigo(inimigo_images, tamanho, inimigo_index, inimigo_group, Inimigo)
+        if len(inimigo_group) == 0:
+            spawn_inimigo_aleatorio(inimigo_images, tamanho[0], inimigo_group, Inimigo)
 
         olho_grupo_sprites.update()  # Atualiza o sprite do olho
         inimigo_group.update()
+
+        olho_sprite.rect.x += movimentoXPersona
 
         if olho_sprite.rect.x < 0:
             olho_sprite.rect.x = 0
