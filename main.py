@@ -5,7 +5,7 @@ import math
 import tkinter as tk
 from tkinter import messagebox
 from complementos.funcoes import inicializarBancoDeDados
-from complementos.funcoes import escreverDados
+from complementos.funcoes import escreverDados, TextInput
 import json
 from complementos.sprites import carregar_imagens, SpriteOlho, SpriteOlho2, load_gif_frames
 from complementos.inimigo import Inimigo, spawn_inimigo_aleatorio
@@ -35,24 +35,35 @@ def jogar():
     global pontos, vidas
     pontos = 0
     vidas = 3
-    invulneravel = False
+    invulnerable = False
     invuln_timer = 0
-    invuln_duration = 1500
+    invuln_duration = 2000
     loop2_started = False
     heart_pulse_timer = 0
     heart_base_size = 45
     heart_pulse_speed = 0.08
     heart_rotation = 0
 
-    def obter_nome():
-        global nome
-        nome = entry_nome.get()  # Obtém o texto digitado
-        if not nome:  # Se o campo estiver vazio
-            messagebox.showwarning("Aviso", "Por favor, digite seu nome!")  # Exibe uma mensagem de aviso
-        else:
-            #print(f'Nome digitado: {nome}')  # Exibe o nome no console
-            root.destroy()  # Fecha a janela após a entrada válida
+    text_input = TextInput(fonteMenu)
+    getting_name = True
 
+    while getting_name:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
+            if text_input.handle_event(event):
+                nome = text_input.text
+                getting_name = False
+        tela.fill((0,0,0))
+        title_name = fonteMenu.render("Digite seu nome: ", True, branco)
+        prompt = fonteMenu.render("Pressione ENTER para confirmar", True, branco)
+
+        tela.blit(title_name, (tamanho[0]//2 - title_name.get_width()//2, tamanho[1]//2 - 50))
+        text_input.draw(tela, tamanho[0]//2 -100, tamanho[1]//2)
+        tela.blit(prompt, (tamanho[0]//2 - prompt.get_width()//2, tamanho[1]//2 + 50))
+
+        pygame.display.flip()
+        relogio.tick(60)
     # Carregar frames do olho
     caminho_olho = "Recursos/Eye"
     largura_desejada_olho = 90
@@ -86,28 +97,7 @@ def jogar():
 
     inimigo_index = spawn_inimigo_aleatorio(inimigo_images, tamanho[0], inimigo_group, Inimigo)
 
-    # Criação da janela principal
-    root = tk.Tk()
-    # Obter as dimensões da tela
-    largura_tela = root.winfo_screenwidth()
-    altura_tela = root.winfo_screenheight()
-    pos_x = (largura_tela - largura_janela) // 2
-    pos_y = (altura_tela - altura_janela) // 2
-    root.geometry(f"{largura_janela}x{altura_janela}+{pos_x}+{pos_y}")
-    root.title("Informe seu nickname")
-    root.protocol("WM_DELETE_WINDOW", obter_nome)
-
-    # Entry (campo de texto)
-    entry_nome = tk.Entry(root)
-    entry_nome.pack()
-
-    # Botão para pegar o nome
-    botao = tk.Button(root, text="Enviar", command=obter_nome)
-    botao.pack()
-
-    print("Before")
-    # Inicia o loop da interface gráfica
-    root.mainloop()
+    
     
     # Intro Musica
     pygame.mixer.music.load("Recursos\SoundTracks\Death.mp3")
@@ -120,64 +110,87 @@ def jogar():
     posicaoXPersona = 400
     posicaoYPersona = 300
     movimentoXPersona  = 0
-    movimentoYPersona  = 0
+    
+    paused = False
+    overlay = pygame.Surface(tamanho)
+    overlay.fill((0, 0, 0))
+    overlay.set_alpha(128)
+    pause_text = fonteMenu.render("Pausado", True, branco)
+    pause_rect = pause_text.get_rect(center=(tamanho[0]//2, tamanho[1]//2))
 
+    keys_pressed = {
+        pygame.K_LEFT: False,
+        pygame.K_RIGHT: False
+    }
     
     dificuldade  = 30
     while True:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 quit()
-            elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_RIGHT:
-                movimentoXPersona = 15
-            elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_LEFT:
-                movimentoXPersona = -15
-            elif evento.type == pygame.KEYUP and evento.key == pygame.K_RIGHT:
-                movimentoXPersona = 0
-            elif evento.type == pygame.KEYUP and evento.key == pygame.K_LEFT:
-                movimentoXPersona = 0
+            elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
+                paused = not paused
+                if paused:
+                    movimentoXPersona = 0
+                    keys_pressed[pygame.K_LEFT] = False
+                    keys_pressed[pygame.K_RIGHT] = False
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key in keys_pressed:
+                    keys_pressed[evento.key] = True
+            elif evento.type == pygame.KEYUP:
+                if evento.key in keys_pressed:
+                    keys_pressed[evento.key] = False
                 
-        
+        if not paused:
+            movimentoXPersona = 0
+            if keys_pressed[pygame.K_RIGHT] and not keys_pressed[pygame.K_LEFT]:
+                movimentoXPersona = 15
+            elif keys_pressed[pygame.K_LEFT] and not keys_pressed[pygame.K_RIGHT]:
+                movimentoXPersona = -15
+            
 
-        if len(inimigo_group) == 0:
-            spawn_inimigo_aleatorio(inimigo_images, tamanho[0], inimigo_group, Inimigo)
+                
+        if not paused:
 
-        olho_grupo_sprites.update()  # Atualiza o sprite do olho
-        inimigo_group.update()
+            if len(inimigo_group) == 0:
+                spawn_inimigo_aleatorio(inimigo_images, tamanho[0], inimigo_group, Inimigo)
 
-        for inimigo in list(inimigo_group):
-            if inimigo.rect.top >= 700 and not inimigo.collided:
-                pontos += 1
-                inimigo_group.remove(inimigo)
-            elif inimigo.rect.top >= 700:
-                inimigo_group.remove(inimigo)
+            olho_grupo_sprites.update()  # Atualiza o sprite do olho
+            inimigo_group.update()
 
-        olho_sprite.rect.x += movimentoXPersona
+            for inimigo in list(inimigo_group):
+                if inimigo.rect.top >= 700 and not inimigo.collided:
+                    pontos += 1
+                    inimigo_group.remove(inimigo)
+                elif inimigo.rect.top >= 700:
+                    inimigo_group.remove(inimigo)
 
-        if olho_sprite.rect.x < 0:
-            olho_sprite.rect.x = 0
-        elif olho_sprite.rect.x > 950:
-            olho_sprite.rect.x = 950
+            olho_sprite.rect.x += movimentoXPersona
 
-        if olho_sprite.rect.y < 0:
-            olho_sprite.rect.y = 0
-        elif olho_sprite.rect.y > 650:
-            olho_sprite.rect.y = 650
+            if olho_sprite.rect.x < 0:
+                olho_sprite.rect.x = 0
+            elif olho_sprite.rect.x > 950:
+                olho_sprite.rect.x = 950
 
-        if invulneravel:
-            if pygame.time.get_ticks() - invuln_timer > invuln_duration:
-                invulneravel = False
+            if olho_sprite.rect.y < 0:
+                olho_sprite.rect.y = 0
+            elif olho_sprite.rect.y > 650:
+                olho_sprite.rect.y = 650
 
-        if not invulneravel and pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
-            vidas -= 1
-            invulneravel = True
-            invuln_timer = pygame.time.get_ticks()
-            for inimigo in pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
-                inimigo.collided = True
-            if vidas <=0:
-                pygame.mixer.music.stop()
-                escreverDados(nome, pontos)
-                dead()
+            if invulnerable:
+                if pygame.time.get_ticks() - invuln_timer > invuln_duration:
+                    invulnerable = False
+
+            if not invulnerable and pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
+                vidas -= 1
+                invulnerable = True
+                invuln_timer = pygame.time.get_ticks()
+                for inimigo in pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
+                    inimigo.collided = True
+                if vidas <=0:
+                    pygame.mixer.music.stop()
+                    escreverDados(nome, pontos)
+                    dead()
         
             
         tela.fill(branco)
@@ -220,6 +233,10 @@ def jogar():
             heart_x = base_x + (i * coracao_spacing) - center_offset_x
             heart_y = base_y - center_offset_y
             tela.blit(coracao_scaled, (heart_x, heart_y))
+
+        if paused:
+            tela.blit(overlay, (0, 0))
+            tela.blit(pause_text, pause_rect)
 
         pygame.display.update()
         relogio.tick(60)
