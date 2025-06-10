@@ -7,7 +7,7 @@ from tkinter import messagebox
 from complementos.funcoes import inicializarBancoDeDados
 from complementos.funcoes import escreverDados, TextInput
 import json
-from complementos.sprites import carregar_imagens, SpriteOlho, SpriteOlho2, load_gif_frames
+from complementos.sprites import carregar_imagens, SpriteOlho, SpriteOlho2, load_gif_frames, BloodSplatter
 from complementos.inimigo import Inimigo, spawn_inimigo_aleatorio
 pygame.init()
 inicializarBancoDeDados()
@@ -35,9 +35,6 @@ def jogar():
     global pontos, vidas
     pontos = 0
     vidas = 3
-    invulnerable = False
-    invuln_timer = 0
-    invuln_duration = 2000
     loop2_started = False
     heart_pulse_timer = 0
     heart_base_size = 45
@@ -46,6 +43,10 @@ def jogar():
 
     text_input = TextInput(fonteMenu)
     getting_name = True
+
+    gif_frames = load_gif_frames("Recursos/Eye/Olho2/Olho2.gif", largura_desejada=50)
+    olho2_sprite = SpriteOlho2((tamanho[0] // 2, 440), gif_frames)
+    olho2_group = pygame.sprite.Group(olho2_sprite)
 
     while getting_name:
         for event in pygame.event.get():
@@ -61,6 +62,38 @@ def jogar():
         tela.blit(title_name, (tamanho[0]//2 - title_name.get_width()//2, tamanho[1]//2 - 50))
         text_input.draw(tela, tamanho[0]//2 -100, tamanho[1]//2)
         tela.blit(prompt, (tamanho[0]//2 - prompt.get_width()//2, tamanho[1]//2 + 50))
+
+        pygame.display.flip()
+        relogio.tick(60)
+
+    showing_tutorial = True
+    while showing_tutorial:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                showing_tutorial = False
+        tela.fill((0,0,0))
+
+        olho2_group.update()
+        olho2_group.draw(tela)
+
+        tutorial_texts = [
+            "Como jogar:",
+            "→ Use as setas para mover o olho",
+            "→ Desvie das facas",
+            "→ Ganhe pontos quando desviar das facas",
+            "→ Pressione ESPAÇO para pausar o jogo",
+            "",
+            "Pressione ESPAÇO para começar!"
+        ]
+
+        y_offset = tamanho[1]//2 - (len(tutorial_texts) * 30)
+        for text in tutorial_texts:
+            text_surface = fonteMenu.render(text, True, branco)
+            text_rect = text_surface.get_rect(center=(tamanho[0]//2, y_offset))
+            tela.blit(text_surface, text_rect)
+            y_offset += 60
 
         pygame.display.flip()
         relogio.tick(60)
@@ -97,7 +130,7 @@ def jogar():
 
     inimigo_index = spawn_inimigo_aleatorio(inimigo_images, tamanho[0], inimigo_group, Inimigo)
 
-    
+    blood_group = pygame.sprite.Group()
     
     # Intro Musica
     pygame.mixer.music.load("Recursos\SoundTracks\Death.mp3")
@@ -147,7 +180,7 @@ def jogar():
                 movimentoXPersona = 15
             elif keys_pressed[pygame.K_LEFT] and not keys_pressed[pygame.K_RIGHT]:
                 movimentoXPersona = -15
-            
+            blood_group.update()
 
                 
         if not paused:
@@ -177,17 +210,31 @@ def jogar():
             elif olho_sprite.rect.y > 650:
                 olho_sprite.rect.y = 650
 
-            if invulnerable:
-                if pygame.time.get_ticks() - invuln_timer > invuln_duration:
-                    invulnerable = False
-
-            if not invulnerable and pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
+            if  pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
                 vidas -= 1
-                invulnerable = True
-                invuln_timer = pygame.time.get_ticks()
                 for inimigo in pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
                     inimigo.collided = True
+                    blood_pos = (olho_sprite.rect.centerx, olho_sprite.rect.top - 50)
+                    blood = BloodSplatter(blood_pos, "Recursos\BloodSplatter\Blood.gif")
+                    blood_group.add(blood)
+                    inimigo_group.remove(inimigo)
                 if vidas <=0:
+                    explosion_sound = pygame.mixer.Sound("Recursos\SoundTracks\explosion_old.mp3")
+                    explosion_sound.play()
+
+                    explosion = BloodSplatter(olho_sprite.rect.center, "Recursos\BloodSplatter\explosion (2).gif")
+                    blood_group.add(explosion)
+                    inimigo_group.empty()
+                    olho_grupo_sprites.remove(olho_sprite)
+
+                    waiting_explosion = True
+                    while waiting_explosion and any(sprite.alive() for sprite in blood_group):
+                        blood_group.update()
+                        tela.fill(branco)
+                        tela.blit(fundoJogo, (0,0))
+                        blood_group.draw(tela)
+                        pygame.display.update()
+                        relogio.tick(60)
                     pygame.mixer.music.stop()
                     escreverDados(nome, pontos)
                     dead()
@@ -197,6 +244,7 @@ def jogar():
         tela.blit(fundoJogo, (0,0) )
         olho_grupo_sprites.draw(tela)
         inimigo_group.draw(tela)
+        blood_group.draw(tela)
         #pygame.draw.circle(tela, preto, (posicaoXPersona,posicaoYPersona), 40, 0 )
         pygame.draw.rect(tela, (255, 0, 0), olho_sprite.rect, 2)
 

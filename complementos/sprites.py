@@ -63,3 +63,21 @@ class SpriteOlho2(pygame.sprite.Sprite):
         if self.current_frame >= len(self.frames):
             self.current_frame = 0
         self.image = self.frames[int(self.current_frame)]
+
+class BloodSplatter(pygame.sprite.Sprite):
+    def __init__(self, position, gif_path):
+        super().__init__()
+        self.frames = load_gif_frames(gif_path, largura_desejada=200)
+        self.current_frame = 0
+        self.is_explosion = "explosion" in gif_path
+        self.animation_speed = 0.2 if self.is_explosion else 0.3
+        self.max_frames = len(self.frames) * 0.5 if self.is_explosion else len(self.frames)
+        self.image = self.frames[self.current_frame]
+        self.rect = self.image.get_rect(center=position)
+
+    def update(self):
+        self.current_frame += self.animation_speed
+        if self.current_frame >= self.max_frames:
+            self.kill()
+        else:
+            self.image = self.frames[int(self.current_frame)]
