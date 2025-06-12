@@ -1,13 +1,14 @@
 # pip install cx_freeze
 import cx_Freeze
 executaveis = [ 
-               cx_Freeze.Executable(script="feito.py", icon="assets/icone.ico") ]
+               cx_Freeze.Executable(script="main.py", icon="Recursos\Icone\Icone.ico") ]
 cx_Freeze.setup(
-    name = "Iron Man",
+    name = "Surrealism",
     options={
         "build_exe":{
-            "packages":["pygame"],
-            "include_files":["assets"]
+            "packages":["pygame", "pyttsx3", "speech_recognition"],
+            "include_files":["Recursos/"],
+            "include_msvcr": True
         }
     }, executables = executaveis
 )
