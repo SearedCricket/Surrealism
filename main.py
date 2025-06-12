@@ -2,6 +2,7 @@ import pygame
 import random
 import os
 import math
+import sys
 import tkinter as tk
 from tkinter import messagebox
 from complementos.funcoes import inicializarBancoDeDados
@@ -11,6 +12,9 @@ from complementos.sprites import carregar_imagens, SpriteOlho, SpriteOlho2, load
 from complementos.inimigo import Inimigo, spawn_inimigo_aleatorio
 import pyttsx3
 import speech_recognition as sr
+def quit():
+    pygame.quit()
+    sys.exit()
 pygame.init()
 inicializarBancoDeDados()
 tamanho = (1000,700)
@@ -157,7 +161,7 @@ def jogar():
     movimentoXPersona  = 0
     
     floating_path = "Recursos\Cassete\Cassete.png"
-    
+
     floating_object = FloatingObject((random.randint(0, tamanho[0]), random.randint(0, tamanho[1])), floating_path)
     floating_group = pygame.sprite.Group(floating_object)
 
@@ -296,10 +300,12 @@ def jogar():
                     dead()
         tela.fill(branco)
         tela.blit(fundoJogo, (0,0) )
-        olho_grupo_sprites.draw(tela)
-        inimigo_group.draw(tela)
-        blood_group.draw(tela)
         floating_group.draw(tela)
+        inimigo_group.draw(tela)
+        olho_grupo_sprites.draw(tela)
+        blood_group.draw(tela)
+        
+
         texto_pontos = fonteMenu.render(f"Pontos: {pontos} ", True, branco)
         pontos_rect = texto_pontos.get_rect()
         pontos_rect.topright = (tamanho[0] - 15, 15)
@@ -504,19 +510,19 @@ def dead():
                                 quit()
                     except sr.UnknownValueError:
                         error_text = fonteMenu.render("Couldn't understand audio", True, branco)
-                        error_rect = error_text.get_rect(center=(tamanho[0]//2, txt_box_y + txt_box_height + 30))
+                        error_rect = error_text.get_rect(center=(tamanho[0]//2, txt_box_y + txt_box_height + 50))
                         tela.blit(error_text, error_rect)
                         pygame.display.update()
                         pygame.time.wait(1000)
                     except sr.RequestError:
                         error_text = fonteMenu.render("Couldn't connect to a speech service", True, branco)
-                        error_rect = error_text.get_rect(center=(tamanho[0]//2, txt_box_y + txt_box_height + 30))
+                        error_rect = error_text.get_rect(center=(tamanho[0]//2, txt_box_y + txt_box_height + 50))
                         tela.blit(error_text, error_rect)
                         pygame.display.update()
                         pygame.time.wait(1000)
                     except sr.WaitTimeoutError:
                         timeout_text = fonteMenu.render("No speech detected", True, branco)
-                        timeout_rect = timeout_text.get_rect(center=(tamanho[0]//2, txt_box_y + txt_box_height + 30))
+                        timeout_rect = timeout_text.get_rect(center=(tamanho[0]//2, txt_box_y + txt_box_height + 50))
                         tela.blit(timeout_text, timeout_rect)
                         pygame.display.update()
                         pygame.time.wait(1000)
