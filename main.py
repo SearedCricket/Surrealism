@@ -7,7 +7,7 @@ from tkinter import messagebox
 from complementos.funcoes import inicializarBancoDeDados
 from complementos.funcoes import escreverDados, TextInput
 import json
-from complementos.sprites import carregar_imagens, SpriteOlho, SpriteOlho2, load_gif_frames, BloodSplatter
+from complementos.sprites import carregar_imagens, SpriteOlho, SpriteOlho2, load_gif_frames, BloodSplatter, FloatingObject
 from complementos.inimigo import Inimigo, spawn_inimigo_aleatorio
 import pyttsx3
 import speech_recognition as sr
@@ -152,12 +152,15 @@ def jogar():
     pygame.mixer.music.load("Recursos\SoundTracks\Death.mp3")
     pygame.mixer.music.play(-1)
 
-    
+    hit_sound = pygame.mixer.Sound("Recursos\SoundTracks\Hit.mp3")
 
-    posicaoXPersona = 400
-    posicaoYPersona = 300
     movimentoXPersona  = 0
     
+    floating_path = "Recursos\Cassete\Cassete.png"
+    
+    floating_object = FloatingObject((random.randint(0, tamanho[0]), random.randint(0, tamanho[1])), floating_path)
+    floating_group = pygame.sprite.Group(floating_object)
+
     paused = False
     overlay = pygame.Surface(tamanho)
     overlay.fill((0, 0, 0))
@@ -204,6 +207,7 @@ def jogar():
 
             olho_grupo_sprites.update()  # Atualiza o sprite do olho
             inimigo_group.update()
+            floating_group.update()
 
             for inimigo in list(inimigo_group):
                 if inimigo.rect.top >= 700 and not inimigo.collided:
@@ -216,19 +220,15 @@ def jogar():
 
             if olho_sprite.rect.x < 0:
                 olho_sprite.rect.x = 0
-            elif olho_sprite.rect.x > 950:
-                olho_sprite.rect.x = 950
-
-            if olho_sprite.rect.y < 0:
-                olho_sprite.rect.y = 0
-            elif olho_sprite.rect.y > 650:
-                olho_sprite.rect.y = 650
+            elif olho_sprite.rect.x > tamanho[0] - olho_sprite.rect.width:
+                olho_sprite.rect.x = tamanho[0] - olho_sprite.rect.width
 
             if  pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
                 vidas -= 1
                 for inimigo in pygame.sprite.spritecollide(olho_sprite, inimigo_group, False):
                     inimigo.collided = True
                     if vidas > 0:
+                        hit_sound.play()
                         blood_pos = (olho_sprite.rect.centerx, olho_sprite.rect.top - 50)
                         blood = BloodSplatter(blood_pos, "Recursos\BloodSplatter\Blood.gif")
                         blood_group.add(blood)
@@ -299,7 +299,7 @@ def jogar():
         olho_grupo_sprites.draw(tela)
         inimigo_group.draw(tela)
         blood_group.draw(tela)
-        
+        floating_group.draw(tela)
         texto_pontos = fonteMenu.render(f"Pontos: {pontos} ", True, branco)
         pontos_rect = texto_pontos.get_rect()
         pontos_rect.topright = (tamanho[0] - 15, 15)
@@ -523,9 +523,6 @@ def dead():
                     finally:
                         listening = False
         
-        voice_hint = fonteEye.render("Press V to use your voice", True, (255,0,0))
-        voice_rect = voice_hint.get_rect(center=(tamanho[0]//2, button_box_y_position - 30))
-        tela.blit(voice_hint, voice_rect)
 
         tela.fill(branco)
         tela.blit(fundoDead, (0,0) )
@@ -538,7 +535,9 @@ def dead():
         pygame.draw.rect(tela, branco, (txt_box_x, txt_box_y, txt_box_width, txt_box_height), 2)
 
         tela.blit(txt_text, txt_text_rect)
-
+        voice_hint = fonteEye.render("Press V to use your voice", True, (255,0,0))
+        voice_rect = voice_hint.get_rect(center=(tamanho[0]//2, txt_box_y + 180))
+        tela.blit(voice_hint, voice_rect)
         if yes_visible:
             current_yes = yes_hover if yes_rect.collidepoint(mouse_pos) else yes_normal
             if button_pressed == "yes":

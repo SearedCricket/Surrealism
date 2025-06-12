@@ -1,11 +1,11 @@
 import pygame
 from random import choice, randint
 class Inimigo(pygame.sprite.Sprite):
-    def __init__(self, image, screen_width, speed):
+    def __init__(self, image, x, speed):
         super().__init__()
         self.image = image
         self.rect = self.image.get_rect()
-        self.rect.x = randint(0, screen_width - self.rect.width)
+        self.rect.x = x
         self.rect.y = -self.rect.height
         self.speed = speed
         self.collided = False

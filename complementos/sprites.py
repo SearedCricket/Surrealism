@@ -1,6 +1,7 @@
 import pygame
 import os
 from PIL import Image
+import random
 
 def carregar_imagens(caminho_pasta, largura):
     imagens = []
@@ -81,3 +82,43 @@ class BloodSplatter(pygame.sprite.Sprite):
             self.kill()
         else:
             self.image = self.frames[int(self.current_frame)]
+
+class FloatingObject(pygame.sprite.Sprite):
+    def __init__(self, position, image_path, speed=3):
+        super().__init__()
+        # Load and scale image
+        original_image = pygame.image.load(image_path)
+        target_width = 40
+        original_ratio = original_image.get_height() / original_image.get_width()
+        target_height = int(target_width * original_ratio)
+        
+        # Store the original scaled image
+        self.original_image = pygame.transform.scale(original_image, (target_width, target_height))
+        self.image = self.original_image
+        
+        self.rect = self.image.get_rect(center=position)
+        self.speed = speed
+        self.direction = pygame.math.Vector2(random.uniform(-1, 1), random.uniform(-1, 1)).normalize()
+        self.position = pygame.math.Vector2(position)
+        self.angle = 0
+        
+    def update(self):
+        # Smoother direction changes
+        self.direction.rotate_ip(random.uniform(-0.2, 0.2))
+        self.direction = self.direction.normalize()
+        
+        # Update position
+        next_pos = self.position + self.direction * self.speed
+        
+        # Bounce off walls
+        if next_pos.x <= 0 or next_pos.x >= 1000:
+            self.direction.x *= -1
+        if next_pos.y <= 0 or next_pos.y >= 700:
+            self.direction.y *= -1
+            
+        self.position += self.direction * self.speed
+        
+        # Rotate smoothly
+        self.angle = (self.angle + 0.5) % 360
+        self.image = pygame.transform.rotate(self.original_image, self.angle)
+        self.rect = self.image.get_rect(center=self.position)
