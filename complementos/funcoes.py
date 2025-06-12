@@ -28,8 +28,8 @@ def escreverDados(nome, pontos):
     else:
         dadosDict = {}
         
-    data_br = datetime.now().strftime("%d/%m/%Y")
-    dadosDict[nome] = (pontos, data_br)
+    data_hora_br = datetime.now().strftime("%d/%m/%Y %H:%M")
+    dadosDict[nome] = (pontos, data_hora_br)
     
     banco = open("log.dat","w")
     banco.write(json.dumps(dadosDict))
@@ -43,6 +43,9 @@ class TextInput:
         self.font = font
         self.max_lenght = max_lenght
         self.active = True
+        self._cursor_visible = True
+        self._last_cursor_toggle = 0
+        self._cursor_toggle_interval = 500
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN and self.active:
@@ -55,7 +58,11 @@ class TextInput:
         return False
     
     def draw(self, surface, x, y):
-        text_surface = self.font.render(self.text + "|", True, (255,255,255))
-        text_rect = text_surface.get_rect(midleft=(x,y))
-        pygame.draw.rect(surface,(0,0,0), text_rect.inflate(20,10))
-        surface.blit(text_surface, text_rect)
+        text_surface = self.font.render(self.text + ('|' if self._cursor_visible else ''), True, (255,255,255))
+        surface.blit(text_surface, (x,y))
+        
+        current_time = pygame.time.get_ticks()
+        if current_time - self._last_cursor_toggle > self._cursor_toggle_interval:
+            self._cursor_visible = not self._cursor_visible
+            self._last_cursor_toggle = current_time
+        
